@@ -1,0 +1,13 @@
+data
+.DS_Store
+*/.DS_Store
+*/*/.DS_Store
+*.log
+.idea
+checkpoints
+__pycache__
+*/__pycache__
+*/*/__pycache__
+deprecated
+results
+log

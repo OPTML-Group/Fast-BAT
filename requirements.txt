@@ -1,0 +1,4 @@
+advertorch==0.2.3
+numpy==1.18.5
+torch==1.8.0
+torchvision==0.9.0
