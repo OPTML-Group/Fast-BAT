@@ -1,6 +1,8 @@
 import os
+import glob
 import torch
 import numpy as np
+from shutil import move
 from torch.utils.data import DataLoader, Subset
 from torchvision import transforms
 from torchvision.datasets import CIFAR10, CIFAR100, SVHN, MNIST, STL10, CelebA, ImageFolder
@@ -170,6 +172,21 @@ def cifar100_dataloader(batch_size=64, data_dir='./data/', val_ratio=0.1):
 
 
 def tiny_imagenet_dataloader(batch_size=64, data_dir='./data/tiny_imagenet/', permutation_seed=10):
+    """
+    Prepare for the Tiny-ImageNet dataset
+    Step 1: wget http://cs231n.stanford.edu/tiny-imagenet-200.zip
+    Step 2: unzip -qq 'tiny-imagenet-200.zip'
+    Step 3: rm tiny-imagenet-200.zip (optional)
+    Code primarily from https://github.com/tjmoon0104/pytorch-tiny-imagenet/blob/master/val_format.py
+    Args:
+        batch_size:
+        data_dir:
+        permutation_seed:
+
+    Returns:
+
+    """
+
     train_transform = transforms.Compose([
         transforms.RandomCrop(64, padding=4),
         transforms.RandomHorizontalFlip(),
@@ -180,9 +197,42 @@ def tiny_imagenet_dataloader(batch_size=64, data_dir='./data/tiny_imagenet/', pe
         transforms.ToTensor(),
     ])
 
-    train_path = os.path.join(data_dir, 'train')
-    val_path = os.path.join(data_dir, 'val')
-    test_path = os.path.join(data_dir, 'test')
+    train_path = os.path.join(data_dir, 'train/')
+    val_path = os.path.join(data_dir, 'val/')
+    test_path = os.path.join(data_dir, 'test/')
+
+    if os.path.exists(os.path.join(val_path, "images")):
+        if os.path.exists(test_path):
+            os.rename(test_path, os.path.join(data_dir, "test_original"))
+            os.mkdir(test_path)
+        val_dict = {}
+        val_anno_path = os.path.join(val_path, "val_annotations.txt")
+        with open(val_anno_path, 'r') as f:
+            for line in f.readlines():
+                split_line = line.split('\t')
+                val_dict[split_line[0]] = split_line[1]
+
+        paths = glob.glob('./tiny-imagenet-200/val/images/*')
+        for path in paths:
+            file = path.split('/')[-1]
+            folder = val_dict[file]
+            if not os.path.exists(val_path + str(folder)):
+                os.mkdir(val_path + str(folder))
+                os.mkdir(val_path + str(folder) + '/images')
+            if not os.path.exists(test_path + str(folder)):
+                os.mkdir(test_path + str(folder))
+                os.mkdir(test_path + str(folder) + '/images')
+
+        for path in paths:
+            file = path.split('/')[-1]
+            folder = val_dict[file]
+            if len(glob.glob(val_path + str(folder) + '/images/*')) < 25:
+                dest = val_path + str(folder) + '/images/' + str(file)
+            else:
+                dest = test_path + str(folder) + '/images/' + str(file)
+            move(path, dest)
+
+        os.rmdir(os.path.join(val_path, "images"))
 
     np.random.seed(permutation_seed)
 

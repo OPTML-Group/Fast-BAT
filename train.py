@@ -1,15 +1,15 @@
-import os
-import logging
 import argparse
+import logging
+import os
 
 from datasets import *
 from model_zoo import *
-from utils.step_lr import *
 from trainer import BatTrainer
-from utils.loading_bar import Log
-from utils.math_utils import smooth_crossentropy, dlr_loss
 from utils.general_utils import write_csv_rows, setup_seed
 from utils.lamb import Lamb
+from utils.loading_bar import Log
+from utils.math_utils import smooth_crossentropy, dlr_loss
+from utils.step_lr import *
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 
@@ -17,11 +17,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser("Bi-level Adversarial Training")
 
     ########################## basic setting ##########################
-    parser.add_argument('--device', default="cuda:0", help="The name of the device you want to use (default: None)")
+    parser.add_argument('--device', default="cuda:0", help="The name of the device you want to use (default: cuda:0)")
     parser.add_argument('--time_stamp', default="debug",
                         help="The time stamp that helps identify different trails.")
     parser.add_argument('--dataset', default="CIFAR10",
-                        choices=["CIFAR10", "CIFAR100", "IMAGENET"])
+                        choices=["CIFAR10", "CIFAR100", "TINY_IMAGENET", "IMAGENET", "SVHN"])
     parser.add_argument('--dataset_val_ratio', default=0.0, type=float)
     parser.add_argument('--mode', default='fast_bat', type=str,
                         choices=["fast_at", "fast_bat", "fast_at_ga", "pgd"],
@@ -47,55 +47,41 @@ if __name__ == "__main__":
     parser.add_argument("--weight_decay", default=0.0005, type=float, help="L2 weight decay.")
     parser.add_argument("--dropout", default=0.1, type=float, help="Dropout rate.")
 
+    ########################## learning scheduler ##########################
     parser.add_argument('--lr_scheduler', default='cyclic',
                         choices=['cyclic', 'multistep'])
     parser.add_argument("--cyclic_milestone", default=10, type=int)
     parser.add_argument("--key_epochs", nargs="+", type=int, default=[100, 150],
-                        help="Epochs where learning rate decays")
-    parser.add_argument("--lr_decay_rate", default=0.1, type=float)
+                        help="Epochs where learning rate decays, this is for multi-step scheduler only.")
+    parser.add_argument("--lr_decay_rate", default=0.1, type=float, help="This is for multi-step scheduler only.")
     parser.add_argument('--lr_min', default=0., type=float)
     parser.add_argument('--lr_max', default=0.2, type=float)
 
+    ########################## model setting ##########################
     parser.add_argument('--train_loss', default="ce", choices=["ce", "sce", "n_dlr"],
                         help="ce for cross entropy, sce for label-smoothed ce, n_dlr for negative dlr loss")
     parser.add_argument('--act_fn', default="relu", choices=["relu", "softplus", "swish"],
                         help="choose the activation function for your model")
-
-    ########################## model setting ##########################
     parser.add_argument("--model_type", default="PreActResNet", choices=['ResNet', 'PreActResNet', 'WideResNet'])
-    parser.add_argument("--width_factor", default=0, type=int, help="How many times wider compared to normal ResNet.")
-    parser.add_argument("--depth", default=18, type=int, help="Number of layers.")
+    parser.add_argument("--width_factor", default=0, type=int, help="Parameter for WideResNet only.")
+    parser.add_argument("--depth", default=18, type=int, help="Parameter for all model types.")
 
     ########################## attack setting ##########################
     parser.add_argument('--attack_step', default=1, type=int,
                         help='attack steps for training (default: 1)')
-    parser.add_argument('--attack_step_test', default=20, type=int,
+    parser.add_argument('--attack_step_test', default=50, type=int,
                         help='attack steps for evaluation (default: 50)')
     parser.add_argument('--attack_eps', default=8, type=float,
                         help='attack constraint for training (default: 8/255)')
     parser.add_argument('--attack_rs', default=1, type=int,
                         help='attack restart number')
     parser.add_argument('--attack_lr', default=2., type=float,
-                        help='initial attack learning rate (default: 2./255)')
+                        help='attack learning rate (default: 2./255). Note this parameter is for training only. The attack lr is always set to attack_eps / 4 when evaluating.')
     parser.add_argument('--attack_rs_test', default=10, type=int,
                         help='attack restart number for evaluation')
-    parser.add_argument('--constraint_type', default='linf',
-                        choices=["linf", "l2"])
 
-    ############################### other options ###################################
-    parser.add_argument('--verbose', default=False, action="store_false",
-                        help="Do you want to output other additional information with BAT?")
-    parser.add_argument('--pgd_no_sign', default=False, action="store_true",
-                        help="Do you want to use non-signed version of PGD?")
-    parser.add_argument('--lmbda', default=10.0, type=float)
-    parser.add_argument('--z_method', default="random", type=str,
-                        choices=["random", "fgsm", "pgd", "ns-pgd", "ns-gd", "ns-pgd-zero"],
-                        help="By which means do you want to initialize z as linearization point?")
-    parser.add_argument('--z_no_detach', default=False, action="store_true",
-                        help="Activate and the grad of z to theta in fast_bat_chain_rule mode will not be detached.")
-    parser.add_argument('--z_init_non_sign_attack_lr', default=5000, type=float,
-                        help="The attack learning rate for generating the Z(theta). "
-                             "The provided value will be divided by 255 later!")
+    ############################### fast-bat options ###################################
+    parser.add_argument('--lmbda', default=10.0, type=float, help="The parameter lambda for Fast-BAT.")
 
     ############################### grad alignment ##################################
     parser.add_argument('--ga_coef', default=0.0, type=float,
@@ -103,7 +89,9 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     device = args.device
-    device = "cuda:0" if torch.cuda.is_available() else "cpu"
+    if device != "cpu" and torch.cuda.is_available():
+        # Please use CUDA_VISIBLE_DEVICES to assign gpu
+        device = "cuda:0"
 
     result_path = "./results/"
     log_path = "./log/"
@@ -117,8 +105,19 @@ if __name__ == "__main__":
         os.mkdir(model_dir)
     if not os.path.exists(csv_dir):
         os.mkdir(csv_dir)
+
+    if args.mode == "fast_at" or args.mode == "fast_at_ga":
+        args.attack_lr = args.attack_eps * 1.25 / 255
+    elif args.mode == "pgd":
+        args.attack_lr = args.attack_eps * 0.5 / 255
+    else:
+        if args.attack_eps <= 8:
+            args.attack_lr = 5000
+        else:
+            args.attack_lr = 3000
+        args.attack_lr = args.attack_lr / 255
+
     args.attack_eps = args.attack_eps / 255
-    args.attack_lr = args.attack_lr / 255
 
     setup_seed(seed=args.random_seed)
     training_type = args.mode.upper()
@@ -126,9 +125,6 @@ if __name__ == "__main__":
     model_path = os.path.join(result_path, args.model_prefix + model_name + '.pth')
     best_model_path = os.path.join(result_path, args.model_prefix + model_name + '_best.pth')
     csv_path = os.path.join(result_path, args.csv_prefix + model_name + '.csv')
-
-    if os.path.isfile(model_path):
-        raise IOError("This model path exists already, please check your time stamp.")
 
     ############################## Logger #################################
     log = Log(log_each=2)
@@ -152,6 +148,18 @@ if __name__ == "__main__":
         train_dl, val_dl, test_dl, norm_layer = imagenet_dataloader(data_dir=args.data_dir,
                                                                     batch_size=args.batch_size)
         num_classes = 1000
+        conv1_size = 3
+
+    elif args.dataset == "TINY_IMAGENET":
+        train_dl, val_dl, test_dl, norm_layer = tiny_imagenet_dataloader(data_dir=args.data_dir,
+                                                                         batch_size=args.batch_size)
+        num_classes = 200
+        conv1_size = 3
+
+    elif args.dataset == "SVHN":
+        train_dl, val_dl, test_dl, norm_layer = svhn_dataloader(data_dir=args.data_dir,
+                                                                batch_size=args.batch_size)
+        num_classes = 10
         conv1_size = 3
     else:
         raise NotImplementedError("Invalid Dataset")
@@ -234,8 +242,6 @@ if __name__ == "__main__":
     elif args.train_loss == "n_dlr":
         def n_dlr(predictions, labels):
             return -dlr_loss(predictions, labels)
-
-
         train_loss = n_dlr
     else:
         raise NotImplementedError("Unsupported Loss Function!")
@@ -278,10 +284,7 @@ if __name__ == "__main__":
                  f"evaluation attack restart: {args.attack_rs_test}\n" + \
                  f"pretrained model: {args.pretrained_model}\n" + \
                  f"pretrained epochs: {args.pretrained_epochs}\n" + \
-                 f"no-sign pgd: {args.pgd_no_sign}\n" + \
                  f"lambda: {args.lmbda}\n" + \
-                 f"z method: {args.z_method}\n" + \
-                 f"z detach: {not args.z_no_detach}\n" + \
                  f"gradient alignment cosine coefficient: {args.ga_coef}\n"
 
     logger.info(param_info)
@@ -294,29 +297,21 @@ if __name__ == "__main__":
     test_ra_list = ['Test Robust Accuracy']
     training_loss_list = ['Training Loss']
     test_loss_list = ['Test Loss']
-    one_percentage_list = ['Diagonal Matrix Density']
-    cos_sim_list = ['Cosine Similarity']
-    param_norm_avg_list = ['Gradient Average Norm']
-    cross_norm_avg_list = ['Term I Average Norm']
 
     best_acc = 0.0
 
     for epoch in range(args.pretrained_epochs, args.epochs):
-        logger.info(f"\n========================Here Comes a New Epoch : {epoch}========================")
+        logger.info(f"\n========================Here z a New Epoch : {epoch}========================")
         model.train()
         csv_row_list = []
         log.train(len_dataset=len(train_dl))
 
-        model, other_info = trainer.train(model=model,
-                                          train_dl=train_dl,
-                                          opt=optimizer,
-                                          loss_func=train_loss,
-                                          scheduler=scheduler,
-                                          device=device)
-
-        logger.info(f"The average training loss is {other_info[4]}")
-        logger.info(f"The average training standard accuracy is {other_info[5]}")
-        logger.info(f"The average training robust accuracy is {other_info[6]}")
+        model = trainer.train(model=model,
+                              train_dl=train_dl,
+                              opt=optimizer,
+                              loss_func=train_loss,
+                              scheduler=scheduler,
+                              device=device)
 
         model.eval()
         log.eval(len_dataset=len(test_dl))
@@ -335,12 +330,8 @@ if __name__ == "__main__":
         # Writing data into csv file
         epoch_num_list.append(epoch)
         csv_row_list.append(epoch_num_list)
-
-        training_loss_list.append(other_info[4])
         csv_row_list.append(training_loss_list)
-        training_sa_list.append(100. * other_info[5])
         csv_row_list.append(training_sa_list)
-        training_ra_list.append(100. * other_info[6])
         csv_row_list.append(training_ra_list)
 
         test_loss_list.append(test_loss)
@@ -353,23 +344,6 @@ if __name__ == "__main__":
         logger.info(f'For the epoch {epoch} the test loss is {test_loss}')
         logger.info(f'For the epoch {epoch} the standard accuracy is {natural_acc}')
         logger.info(f'For the epoch {epoch} the robust accuracy is {robust_acc}')
-
-        if args.verbose:
-            one_percentage_list.append(100. * other_info[0])
-            csv_row_list.append(one_percentage_list)
-            logger.info(f"The percentage of '1' is {100 * other_info[0]}")
-
-            param_norm_avg_list.append(other_info[2])
-            csv_row_list.append(param_norm_avg_list)
-            logger.info(f"The average norm of original grad is {other_info[2]}")
-
-            cross_norm_avg_list.append(other_info[3])
-            csv_row_list.append(cross_norm_avg_list)
-            logger.info(f"The average norm of cross term is {other_info[3]}")
-
-            cos_sim_list.append(other_info[1])
-            csv_row_list.append(cos_sim_list)
-            logger.info(f"The cosine similarity of original and new grad is {other_info[1]}")
 
         model.save(model_path)
         write_csv_rows(csv_path, csv_row_list)

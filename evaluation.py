@@ -16,7 +16,7 @@ parser.add_argument('--model_normalize', default=True, type=bool)
 parser.add_argument("--batch_size", default=200, type=int,
                     help="Batch size used in the training and validation loop.")
 parser.add_argument('--device', default="cuda:0")
-parser.add_argument('--dataset', default="CIFAR10", choices=["CIFAR10", "CIFAR100"])
+parser.add_argument('--dataset', default="CIFAR10", choices=["CIFAR10", "CIFAR100", "TINY_IMAGENET", "IMAGENET", "SVHN"])
 parser.add_argument('--model_type', default='PreActResNet', choices=['WideResNet', 'ResNet', 'PreActResNet'])
 parser.add_argument('--depth', default=18, type=int, help="Number of layers.")
 parser.add_argument("--dropout", default=0.1, type=float, help="Dropout rate.")
@@ -52,12 +52,33 @@ def evaluation(model_path):
 
     ########################## dataset and model ##########################
     if args.dataset == "CIFAR10":
-        train_dl, val_dl, test_dl, norm_layer = cifar10_dataloader(batch_size=args.batch_size)
+        train_dl, val_dl, test_dl, norm_layer = cifar10_dataloader(data_dir=args.data_dir,
+                                                                   batch_size=args.batch_size,
+                                                                   val_ratio=args.dataset_val_ratio)
         num_classes = 10
         conv1_size = 3
     elif args.dataset == "CIFAR100":
-        train_dl, val_dl, test_dl, norm_layer = cifar100_dataloader(batch_size=args.batch_size)
+        train_dl, val_dl, test_dl, norm_layer = cifar100_dataloader(data_dir=args.data_dir,
+                                                                    batch_size=args.batch_size,
+                                                                    val_ratio=args.dataset_val_ratio)
         num_classes = 100
+        conv1_size = 3
+    elif args.dataset == "IMAGENET":
+        train_dl, val_dl, test_dl, norm_layer = imagenet_dataloader(data_dir=args.data_dir,
+                                                                    batch_size=args.batch_size)
+        num_classes = 1000
+        conv1_size = 3
+
+    elif args.dataset == "TINY_IMAGENET":
+        train_dl, val_dl, test_dl, norm_layer = tiny_imagenet_dataloader(data_dir=args.data_dir,
+                                                                         batch_size=args.batch_size)
+        num_classes = 200
+        conv1_size = 3
+
+    elif args.dataset == "SVHN":
+        train_dl, val_dl, test_dl, norm_layer = svhn_dataloader(data_dir=args.data_dir,
+                                                                batch_size=args.batch_size)
+        num_classes = 10
         conv1_size = 3
     else:
         raise NotImplementedError("Invalid Dataset")
