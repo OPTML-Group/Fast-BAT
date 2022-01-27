@@ -76,7 +76,7 @@ The important parameters for evaluate models (using `evaluation.py`) are listed 
 --eps               the attack budgets for evaluation, split by space, e.g. "8 12 16" 
 ```
 
-When applying transfer attack, there are a few more parameters you should pay attention:
+When applying transfer attack, there are a few more parameters you should pay attention to:
 ```
 --transfer              this parameter identifies the mode of transfer attack and the following parameters are activated. The following three parameters for surrogate models are just like that for victim models.
 --surrogate_model_path  see above
