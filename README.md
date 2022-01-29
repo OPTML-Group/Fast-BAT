@@ -62,7 +62,7 @@ $ python train.py --mode fast_at --dataset <DatasetName> --attack_eps <AttackEps
 $ python train.py --mode fast_at_ga --dataset <DatasetName> --attack_eps <AttackEps> --ga_coef <GA_Coefficient>
 ```
 * The parameter choices are as following:
-    * `<DatasetName>` : `CIFAR10` | `CIFAR100` | `SVHN` | `TINY_IMAGENET`.
+    * `<DatasetName>` : `CIFAR10` | `CIFAR100` | `SVHN` | `TINY_IMAGENET` | `GTSRB`
     * `<AttackEps>` : `2~16`
 
     * For Fast-AT-GA, there is a special parameter `GA_Coefficient`, it can be chosen according to the following table, which is copied from its [official repo](https://github.com/tml-epfl/understanding-fast-adv-training/blob/master/sh/exps_diff_eps_cifar10.sh#L40):

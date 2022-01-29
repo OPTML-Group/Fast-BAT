@@ -21,7 +21,7 @@ if __name__ == "__main__":
     parser.add_argument('--time_stamp', default="debug",
                         help="The time stamp that helps identify different trails.")
     parser.add_argument('--dataset', default="CIFAR10",
-                        choices=["CIFAR10", "CIFAR100", "TINY_IMAGENET", "IMAGENET", "SVHN"])
+                        choices=["CIFAR10", "CIFAR100", "TINY_IMAGENET", "IMAGENET", "SVHN", "GTSRB"])
     parser.add_argument('--dataset_val_ratio', default=0.0, type=float)
     parser.add_argument('--mode', default='fast_bat', type=str,
                         choices=["fast_at", "fast_bat", "fast_at_ga", "pgd"],
@@ -52,9 +52,12 @@ if __name__ == "__main__":
     parser.add_argument("--key_epochs", nargs="+", type=int, default=[100, 150],
                         help="Epochs where learning rate decays, this is for multi-step scheduler only.")
     parser.add_argument("--lr_decay_rate", default=0.1, type=float, help="This is for multi-step scheduler only.")
-    parser.add_argument("--cyclic_milestone", default=10, type=int, help="Key epoch for cyclic scheduler. This is for cyclic scheduler only.")
-    parser.add_argument('--lr_min', default=0., type=float, help="Min lr for cyclic scheduler. This is for cyclic scheduler only.")
-    parser.add_argument('--lr_max', default=0.2, type=float, help="Max lr for cyclic scheduler. This is for cyclic scheduler only.")
+    parser.add_argument("--cyclic_milestone", default=10, type=int,
+                        help="Key epoch for cyclic scheduler. This is for cyclic scheduler only.")
+    parser.add_argument('--lr_min', default=0., type=float,
+                        help="Min lr for cyclic scheduler. This is for cyclic scheduler only.")
+    parser.add_argument('--lr_max', default=0.2, type=float,
+                        help="Max lr for cyclic scheduler. This is for cyclic scheduler only.")
 
     ########################## model setting ##########################
     parser.add_argument('--train_loss', default="ce", choices=["ce", "sce", "n_dlr"],
@@ -137,34 +140,28 @@ if __name__ == "__main__":
 
     ########################## dataset and model ##########################
     if args.dataset == "CIFAR10":
-        train_dl, val_dl, test_dl, norm_layer = cifar10_dataloader(data_dir=args.data_dir,
-                                                                   batch_size=args.batch_size,
-                                                                   val_ratio=args.dataset_val_ratio)
-        num_classes = 10
-        conv1_size = 3
+        train_dl, val_dl, test_dl, norm_layer, num_classes = cifar10_dataloader(data_dir=args.data_dir,
+                                                                                batch_size=args.batch_size,
+                                                                                val_ratio=args.dataset_val_ratio)
     elif args.dataset == "CIFAR100":
-        train_dl, val_dl, test_dl, norm_layer = cifar100_dataloader(data_dir=args.data_dir,
-                                                                    batch_size=args.batch_size,
-                                                                    val_ratio=args.dataset_val_ratio)
-        num_classes = 100
-        conv1_size = 3
+        train_dl, val_dl, test_dl, norm_layer, num_classes = cifar100_dataloader(data_dir=args.data_dir,
+                                                                                 batch_size=args.batch_size,
+                                                                                 val_ratio=args.dataset_val_ratio)
     elif args.dataset == "IMAGENET":
-        train_dl, val_dl, test_dl, norm_layer = imagenet_dataloader(data_dir=args.data_dir,
-                                                                    batch_size=args.batch_size)
-        num_classes = 1000
-        conv1_size = 3
+        train_dl, val_dl, test_dl, norm_layer, num_classes = imagenet_dataloader(data_dir=args.data_dir,
+                                                                                 batch_size=args.batch_size)
 
     elif args.dataset == "TINY_IMAGENET":
-        train_dl, val_dl, test_dl, norm_layer = tiny_imagenet_dataloader(data_dir=args.data_dir,
-                                                                         batch_size=args.batch_size)
-        num_classes = 200
-        conv1_size = 3
+        train_dl, val_dl, test_dl, norm_layer, num_classes = tiny_imagenet_dataloader(data_dir=args.data_dir,
+                                                                                      batch_size=args.batch_size)
 
     elif args.dataset == "SVHN":
-        train_dl, val_dl, test_dl, norm_layer = svhn_dataloader(data_dir=args.data_dir,
-                                                                batch_size=args.batch_size)
-        num_classes = 10
-        conv1_size = 3
+        train_dl, val_dl, test_dl, norm_layer, num_classes = svhn_dataloader(data_dir=args.data_dir,
+                                                                             batch_size=args.batch_size)
+    elif args.dataset == "GTSRB":
+        train_dl, val_dl, test_dl, norm_layer, num_classes = gtsrb_dataloader(data_dir=args.data_dir,
+                                                                              batch_size=args.batch_size,
+                                                                              val_ratio=args.dataset_val_ratio)
     else:
         raise NotImplementedError("Invalid Dataset")
 
@@ -179,33 +176,33 @@ if __name__ == "__main__":
 
     if args.model_type == "WideResNet":
         if args.depth == 16:
-            model = WRN_16_8(num_classes=num_classes, conv1_size=conv1_size, dropout=args.dropout,
+            model = WRN_16_8(num_classes=num_classes, dropout=args.dropout,
                              activation_fn=activation_fn)
         elif args.depth == 28:
-            model = WRN_28_10(num_classes=num_classes, conv1_size=conv1_size, dropout=args.dropout,
+            model = WRN_28_10(num_classes=num_classes, dropout=args.dropout,
                               activation_fn=activation_fn)
         elif args.depth == 34:
-            model = WRN_34_10(num_classes=num_classes, conv1_size=conv1_size, dropout=args.dropout,
+            model = WRN_34_10(num_classes=num_classes, dropout=args.dropout,
                               activation_fn=activation_fn)
         elif args.depth == 70:
-            model = WRN_70_16(num_classes=num_classes, conv1_size=conv1_size, dropout=args.dropout,
+            model = WRN_70_16(num_classes=num_classes, dropout=args.dropout,
                               activation_fn=activation_fn)
         else:
             raise NotImplementedError("Unsupported WideResNet!")
     elif args.model_type == "PreActResNet":
         if args.depth == 18:
-            model = PreActResNet18(num_classes=num_classes, conv1_size=conv1_size, activation_fn=activation_fn)
+            model = PreActResNet18(num_classes=num_classes, activation_fn=activation_fn)
         elif args.depth == 34:
-            model = PreActResNet34(num_classes=num_classes, conv1_size=conv1_size, activation_fn=activation_fn)
+            model = PreActResNet34(num_classes=num_classes, activation_fn=activation_fn)
         else:
-            model = PreActResNet50(num_classes=num_classes, conv1_size=conv1_size, activation_fn=activation_fn)
+            model = PreActResNet50(num_classes=num_classes, activation_fn=activation_fn)
     elif args.model_type == "ResNet":
         if args.depth == 18:
-            model = ResNet18(num_classes=num_classes, conv1_size=conv1_size, activation_fn=activation_fn)
+            model = ResNet18(num_classes=num_classes, activation_fn=activation_fn)
         elif args.depth == 34:
-            model = ResNet34(num_classes=num_classes, conv1_size=conv1_size, activation_fn=activation_fn)
+            model = ResNet34(num_classes=num_classes, activation_fn=activation_fn)
         else:
-            model = ResNet50(num_classes=num_classes, conv1_size=conv1_size, activation_fn=activation_fn)
+            model = ResNet50(num_classes=num_classes, activation_fn=activation_fn)
     else:
         raise NotImplementedError("Unsupported Model Type!")
     model.normalize = norm_layer
@@ -246,6 +243,8 @@ if __name__ == "__main__":
     elif args.train_loss == "n_dlr":
         def n_dlr(predictions, labels):
             return -dlr_loss(predictions, labels)
+
+
         train_loss = n_dlr
     else:
         raise NotImplementedError("Unsupported Loss Function!")

@@ -11,7 +11,7 @@ from model_zoo import *
 from utils.context import ctx_noparamgrad
 from utils.general_utils import write_csv_rows
 
-parser = argparse.ArgumentParser(description='Evaluation for Cifar10 Dataset')
+parser = argparse.ArgumentParser(description='Robustness Evaluation')
 parser.add_argument('--device', default="cuda", choices=["cuda", "cpu"])
 
 parser.add_argument('--model_path', required=True)
@@ -23,7 +23,7 @@ parser.add_argument('--act_fn', default="relu", choices=["relu", "softplus", "sw
 
 parser.add_argument('--data_dir', default='./data/', type=str, help="The folder where you store your dataset")
 parser.add_argument('--dataset', default="CIFAR10",
-                    choices=["CIFAR10", "CIFAR100", "TINY_IMAGENET", "IMAGENET", "SVHN"])
+                    choices=["CIFAR10", "CIFAR100", "TINY_IMAGENET", "IMAGENET", "SVHN", "GTSRB"])
 parser.add_argument("--batch_size", default=200, type=int,
                     help="Batch size used in the training and validation loop.")
 
@@ -56,34 +56,28 @@ def evaluation(model_path):
 
     ########################## dataset and model ##########################
     if args.dataset == "CIFAR10":
-        train_dl, val_dl, test_dl, norm_layer = cifar10_dataloader(data_dir=args.data_dir,
-                                                                   batch_size=args.batch_size,
-                                                                   val_ratio=args.dataset_val_ratio)
-        num_classes = 10
-        conv1_size = 3
+        train_dl, val_dl, test_dl, norm_layer, num_classes = cifar10_dataloader(data_dir=args.data_dir,
+                                                                                batch_size=args.batch_size,
+                                                                                val_ratio=0.0)
     elif args.dataset == "CIFAR100":
-        train_dl, val_dl, test_dl, norm_layer = cifar100_dataloader(data_dir=args.data_dir,
-                                                                    batch_size=args.batch_size,
-                                                                    val_ratio=args.dataset_val_ratio)
-        num_classes = 100
-        conv1_size = 3
+        train_dl, val_dl, test_dl, norm_layer, num_classes = cifar100_dataloader(data_dir=args.data_dir,
+                                                                                 batch_size=args.batch_size,
+                                                                                 val_ratio=0.0)
     elif args.dataset == "IMAGENET":
-        train_dl, val_dl, test_dl, norm_layer = imagenet_dataloader(data_dir=args.data_dir,
-                                                                    batch_size=args.batch_size)
-        num_classes = 1000
-        conv1_size = 3
+        train_dl, val_dl, test_dl, norm_layer, num_classes = imagenet_dataloader(data_dir=args.data_dir,
+                                                                                 batch_size=args.batch_size)
 
     elif args.dataset == "TINY_IMAGENET":
-        train_dl, val_dl, test_dl, norm_layer = tiny_imagenet_dataloader(data_dir=args.data_dir,
-                                                                         batch_size=args.batch_size)
-        num_classes = 200
-        conv1_size = 3
+        train_dl, val_dl, test_dl, norm_layer, num_classes = tiny_imagenet_dataloader(data_dir=args.data_dir,
+                                                                                      batch_size=args.batch_size)
 
     elif args.dataset == "SVHN":
-        train_dl, val_dl, test_dl, norm_layer = svhn_dataloader(data_dir=args.data_dir,
-                                                                batch_size=args.batch_size)
-        num_classes = 10
-        conv1_size = 3
+        train_dl, val_dl, test_dl, norm_layer, num_classes = svhn_dataloader(data_dir=args.data_dir,
+                                                                             batch_size=args.batch_size)
+    elif args.dataset == "GTSRB":
+        train_dl, val_dl, test_dl, norm_layer, num_classes = gtsrb_dataloader(data_dir=args.data_dir,
+                                                                              batch_size=args.batch_size,
+                                                                              val_ratio=0.0)
     else:
         raise NotImplementedError("Invalid Dataset")
 
@@ -100,33 +94,33 @@ def evaluation(model_path):
 
     if args.model_type == "WideResNet":
         if args.depth == 16:
-            model = WRN_16_8(num_classes=num_classes, conv1_size=conv1_size, dropout=args.dropout,
+            model = WRN_16_8(num_classes=num_classes, dropout=args.dropout,
                              activation_fn=activation_fn)
         elif args.depth == 28:
-            model = WRN_28_10(num_classes=num_classes, conv1_size=conv1_size, dropout=args.dropout,
+            model = WRN_28_10(num_classes=num_classes, dropout=args.dropout,
                               activation_fn=activation_fn)
         elif args.depth == 34:
-            model = WRN_34_10(num_classes=num_classes, conv1_size=conv1_size, dropout=args.dropout,
+            model = WRN_34_10(num_classes=num_classes, dropout=args.dropout,
                               activation_fn=activation_fn)
         elif args.depth == 70:
-            model = WRN_70_16(num_classes=num_classes, conv1_size=conv1_size, dropout=args.dropout,
+            model = WRN_70_16(num_classes=num_classes, dropout=args.dropout,
                               activation_fn=activation_fn)
         else:
             raise NotImplementedError("Unsupported WideResNet!")
     elif args.model_type == "PreActResNet":
         if args.depth == 18:
-            model = PreActResNet18(num_classes=num_classes, conv1_size=conv1_size, activation_fn=activation_fn)
+            model = PreActResNet18(num_classes=num_classes, activation_fn=activation_fn)
         elif args.depth == 34:
-            model = PreActResNet34(num_classes=num_classes, conv1_size=conv1_size, activation_fn=activation_fn)
+            model = PreActResNet34(num_classes=num_classes, activation_fn=activation_fn)
         else:
-            model = PreActResNet50(num_classes=num_classes, conv1_size=conv1_size, activation_fn=activation_fn)
+            model = PreActResNet50(num_classes=num_classes, activation_fn=activation_fn)
     elif args.model_type == "ResNet":
         if args.depth == 18:
-            model = ResNet18(num_classes=num_classes, conv1_size=conv1_size, activation_fn=activation_fn)
+            model = ResNet18(num_classes=num_classes, activation_fn=activation_fn)
         elif args.depth == 34:
-            model = ResNet34(num_classes=num_classes, conv1_size=conv1_size, activation_fn=activation_fn)
+            model = ResNet34(num_classes=num_classes, activation_fn=activation_fn)
         else:
-            model = ResNet50(num_classes=num_classes, conv1_size=conv1_size, activation_fn=activation_fn)
+            model = ResNet50(num_classes=num_classes, activation_fn=activation_fn)
     else:
         raise NotImplementedError("Unsupported Model Type!")
     model.normalize = norm_layer

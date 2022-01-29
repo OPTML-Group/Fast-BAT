@@ -1,15 +1,18 @@
-import os
 import glob
-import torch
-import numpy as np
+import os
 from shutil import move
-from torch.utils.data import DataLoader, Subset
+
+import numpy as np
+import pandas as pd
+import torch
+import torchvision.datasets as datasets
+from PIL import Image
+from torch.utils.data import DataLoader, Subset, Dataset
 from torchvision import transforms
 from torchvision.datasets import CIFAR10, CIFAR100, SVHN, MNIST, STL10, CelebA, ImageFolder
-import torchvision.datasets as datasets
 
 __all__ = ['mnist_dataloader', 'cifar10_dataloader', 'cifar100_dataloader', 'tiny_imagenet_dataloader',
-           'svhn_dataloader', 'stl10_dataloader', 'celeba_dataloader', 'imagenet_dataloader']
+           'svhn_dataloader', 'stl10_dataloader', 'celeba_dataloader', 'imagenet_dataloader', 'gtsrb_dataloader']
 
 
 class NormalizeByChannelMeanStd(torch.nn.Module):
@@ -64,7 +67,9 @@ def imagenet_dataloader(batch_size=128, data_dir='/data'):
     dataset_normalization = NormalizeByChannelMeanStd(mean=torch.tensor([0.485, 0.456, 0.406]),
                                                       std=torch.tensor([0.229, 0.224, 0.225]))
 
-    return train_loader, val_loader, val_loader, dataset_normalization
+    num_classes = 1000
+
+    return train_loader, val_loader, val_loader, dataset_normalization, num_classes
 
 
 def celeba_dataloader(batch_size=64, data_dir='./data'):
@@ -85,6 +90,8 @@ def celeba_dataloader(batch_size=64, data_dir='./data'):
     val_loader = DataLoader(val_set, batch_size=batch_size, shuffle=False, num_workers=2, pin_memory=True)
 
     test_loader = DataLoader(test_set, batch_size=batch_size, shuffle=False, num_workers=2, pin_memory=True)
+
+    assert NotImplementedError("Not Ready for Use!")
 
     return train_loader, val_loader, test_loader, None
 
@@ -109,7 +116,10 @@ def mnist_dataloader(batch_size=64, data_dir='./data/', val_ratio=0.1):
     train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True, num_workers=2, pin_memory=True)
     val_loader = DataLoader(val_set, batch_size=batch_size, shuffle=False, num_workers=2, pin_memory=True)
     test_loader = DataLoader(test_set, batch_size=batch_size, shuffle=False, num_workers=2, pin_memory=True)
-    return train_loader, val_loader, test_loader
+
+    num_classes = 10
+
+    return train_loader, val_loader, test_loader, num_classes
 
 
 def cifar10_dataloader(batch_size=64, data_dir='./data/', val_ratio=0.1):
@@ -137,7 +147,9 @@ def cifar10_dataloader(batch_size=64, data_dir='./data/', val_ratio=0.1):
 
     dataset_normalization = NormalizeByChannelMeanStd(
         mean=[0.4914, 0.4822, 0.4465], std=[0.2470, 0.2435, 0.2616])
-    return train_loader, val_loader, test_loader, dataset_normalization
+
+    num_classes = 10
+    return train_loader, val_loader, test_loader, dataset_normalization, num_classes
 
 
 def cifar100_dataloader(batch_size=64, data_dir='./data/', val_ratio=0.1):
@@ -168,7 +180,9 @@ def cifar100_dataloader(batch_size=64, data_dir='./data/', val_ratio=0.1):
     dataset_normalization = NormalizeByChannelMeanStd(
         mean=[0.5071, 0.4865, 0.4409], std=[0.2673, 0.2564, 0.2762])
 
-    return train_loader, val_loader, test_loader, dataset_normalization
+    num_classes = 100
+
+    return train_loader, val_loader, test_loader, dataset_normalization, num_classes
 
 
 def tiny_imagenet_dataloader(batch_size=64, data_dir='./data/tiny_imagenet/', permutation_seed=10):
@@ -247,7 +261,9 @@ def tiny_imagenet_dataloader(batch_size=64, data_dir='./data/tiny_imagenet/', pe
     dataset_normalization = NormalizeByChannelMeanStd(
         mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
-    return train_loader, val_loader, test_loader, dataset_normalization
+    num_classes = 200
+
+    return train_loader, val_loader, test_loader, dataset_normalization, num_classes
 
 
 def svhn_dataloader(batch_size=64, data_dir='./data/', val_ratio=0.1):
@@ -275,7 +291,9 @@ def svhn_dataloader(batch_size=64, data_dir='./data/', val_ratio=0.1):
                              drop_last=True)
     dataset_normalization = NormalizeByChannelMeanStd(mean=[0.4377, 0.4438, 0.4728], std=[0.1201, 0.1231, 0.1052])
 
-    return train_loader, val_loader, test_loader, dataset_normalization
+    num_classes = 10
+
+    return train_loader, val_loader, test_loader, dataset_normalization, num_classes
 
 
 def stl10_dataloader(batch_size=64, data_dir='./data/'):
@@ -298,4 +316,91 @@ def stl10_dataloader(batch_size=64, data_dir='./data/'):
     test_loader = DataLoader(test_set, batch_size=batch_size, shuffle=False, num_workers=2, pin_memory=True)
 
     dataset_normalization = NormalizeByChannelMeanStd(mean=[0.4467, 0.4398, 0.4066], std=[0.2242, 0.2215, 0.2239])
-    return train_loader, test_loader, test_loader, dataset_normalization
+
+    num_classes = 10
+    return train_loader, test_loader, test_loader, dataset_normalization, num_classes
+
+
+class GTSRB(Dataset):
+    base_folder = 'GTSRB'
+
+    def __init__(self, root_dir, train=False, transform=None):
+        self.root_dir = root_dir
+
+        self.sub_directory = 'trainingset' if train else 'testset'
+        self.csv_file_name = 'training.csv' if train else 'test.csv'
+
+        csv_file_path = os.path.join(
+            root_dir, self.base_folder, self.sub_directory, self.csv_file_name)
+
+        print("Reading GTSRB data......")
+        self.csv_data = pd.read_csv(csv_file_path)
+
+        self.transform = transform
+
+        self.imgs = []
+        self.labels = []
+
+        print("Processing GTSRB data......")
+        for idx in range(len(self.csv_data)):
+            img_path = os.path.join(self.root_dir, self.base_folder, self.sub_directory,
+                                    self.csv_data.iloc[idx, 0])
+            img = Image.open(img_path)
+            classId = self.csv_data.iloc[idx, 1]
+            self.labels.append(classId)
+
+            if self.transform is not None:
+                img = self.transform(img)
+
+            self.imgs.append(img)
+        self.imgs = torch.stack(self.imgs)
+        self.labels = torch.tensor(self.labels)
+
+    def __len__(self):
+        return len(self.csv_data)
+
+    def __getitem__(self, idx):
+        return self.imgs[idx], self.labels[idx]
+
+
+def gtsrb_dataloader(batch_size=128, data_dir='./data/', val_ratio=0.1):
+    """
+    Code Ref: https://github.com/tomlawrenceuk/GTSRB-Dataloader/blob/master/gtsrb_dataset.py
+    Download dataset from https://onedrive.live.com/?authkey=%21AKNpIXu0xpmVm1I&cid=25B382439BAD237F&id=25B382439BAD237F%21224763&parId=25B382439BAD237F%21224762&action=locate
+    Unzip the zip file and make the path the data_dir below.
+
+    Args:
+        data_dir: see ABOVE
+    Returns:
+
+    """
+    train_transform = transforms.Compose([
+        transforms.Resize((32, 32)),
+        transforms.RandomCrop(32, padding=4),
+        transforms.RandomHorizontalFlip(),
+        transforms.ToTensor(),
+    ])
+
+    test_transform = transforms.Compose([
+        transforms.Resize((32, 32)),
+        transforms.ToTensor(),
+    ])
+
+    number_train_images = 39208
+
+    train_size = int(number_train_images * (1 - val_ratio))
+    val_size = number_train_images - train_size
+    full_train_set = GTSRB(data_dir, train=True, transform=train_transform)
+    train_set = Subset(full_train_set, list(range(train_size)))
+    val_set = Subset(full_train_set,
+                     list(range(train_size, train_size + val_size)))
+    test_set = GTSRB(data_dir, train=False, transform=test_transform)
+
+    train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True, num_workers=2, pin_memory=True)
+    val_loader = DataLoader(val_set, batch_size=batch_size, shuffle=False, num_workers=2, pin_memory=True)
+    test_loader = DataLoader(test_set, batch_size=batch_size, shuffle=False, num_workers=2, pin_memory=True)
+
+    dataset_normalization = NormalizeByChannelMeanStd(
+        mean=[0.3403, 0.3121, 0.3214], std=[0.2724, 0.2608, 0.2669])
+    num_classes = 43
+    return train_loader, val_loader, test_loader, dataset_normalization, num_classes
