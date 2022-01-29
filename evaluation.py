@@ -1,41 +1,45 @@
-import os
-from tqdm import tqdm as tqdm
 import argparse
 import copy
+import os
 
-from model_zoo import *
-from utils.general_utils import write_csv_rows
-from datasets import *
+from tqdm import tqdm as tqdm
+
 from attack import AutoAttack
-from utils.context import ctx_noparamgrad
 from attack.pgd_attack_restart import attack_pgd_restart
+from datasets import *
+from model_zoo import *
+from utils.context import ctx_noparamgrad
+from utils.general_utils import write_csv_rows
 
 parser = argparse.ArgumentParser(description='Evaluation for Cifar10 Dataset')
+parser.add_argument('--device', default="cuda", choices=["cuda", "cpu"])
+
 parser.add_argument('--model_path', required=True)
-parser.add_argument('--model_normalize', default=True, type=bool)
-parser.add_argument("--batch_size", default=200, type=int,
-                    help="Batch size used in the training and validation loop.")
-parser.add_argument('--device', default="cuda:0")
-parser.add_argument('--dataset', default="CIFAR10", choices=["CIFAR10", "CIFAR100", "TINY_IMAGENET", "IMAGENET", "SVHN"])
 parser.add_argument('--model_type', default='PreActResNet', choices=['WideResNet', 'ResNet', 'PreActResNet'])
 parser.add_argument('--depth', default=18, type=int, help="Number of layers.")
 parser.add_argument("--dropout", default=0.1, type=float, help="Dropout rate.")
 parser.add_argument('--act_fn', default="relu", choices=["relu", "softplus", "swish"],
                     help="choose the activation function for your model")
+
+parser.add_argument('--data_dir', default='./data/', type=str, help="The folder where you store your dataset")
+parser.add_argument('--dataset', default="CIFAR10",
+                    choices=["CIFAR10", "CIFAR100", "TINY_IMAGENET", "IMAGENET", "SVHN"])
+parser.add_argument("--batch_size", default=200, type=int,
+                    help="Batch size used in the training and validation loop.")
+
 parser.add_argument('--eps', default=[10, 12, 14, 16], type=int, nargs="+")
-
-parser.add_argument('--surrogate_model_path', default=None)
-parser.add_argument('--surrogate_model_type', default='PreActResNet', choices=['WideResNet', 'ResNet', 'PreActResNet'])
-parser.add_argument('--surrogate_model_depth', default=50, type=int, help="Number of layers of surrogate model.")
-parser.add_argument("--surrogate_model_dropout", default=0.1, type=float, help="Surrogate model dropout rate.")
-
 parser.add_argument('--attack_step', default=50, type=int,
                     help='attack steps for training (default: 50)')
 parser.add_argument('--attack_rs', default=10, type=int,
                     help='attack restart number for evaluation')
 parser.add_argument('--attack_method', default='PGD', choices=['PGD', 'AutoAttack'])
 parser.add_argument('--pgd_no_sign', default=False, action="store_true")
+
 parser.add_argument('--transfer', default=False, action="store_true", help="Do you want to apply transfer attack?")
+parser.add_argument('--surrogate_model_path', default=None)
+parser.add_argument('--surrogate_model_type', default='PreActResNet', choices=['WideResNet', 'ResNet', 'PreActResNet'])
+parser.add_argument('--surrogate_model_depth', default=50, type=int, help="Number of layers of surrogate model.")
+parser.add_argument("--surrogate_model_dropout", default=0.1, type=float, help="Surrogate model dropout rate.")
 
 args = parser.parse_args()
 
