@@ -3,6 +3,8 @@
 
 This is an official implementation of the paper "Revisiting and Advancing Fast Adversarial Training through the Lens of Bi-level Optimization". Fast-BAT is a new state-of-the-art method for accelerated adversarial training.
 
+## What's in this repository?
+
 This repository serves as the second major contribution to the community besides our proposed Fast-BAT. 
 This repository contains various methods for adversarial training as well as attacks for robustness evaluation. 
 In addition to neat implementations, this codebase is designed to offer as much flexibility to users as possible, 
@@ -20,9 +22,7 @@ the code is easy to understand; for advanced researchers, this code framework is
 robustness-related research. We hope this codebase sweeps the obstacles on implementation for you and eases your research and study. 
 
 
-If this code base helps you, please cite our paper:
-
-> Zhang, Y., Zhang, G., Khanduri, P., Hong, M., Chang, S., & Liu, S. (2021). Revisiting and Advancing Fast Adversarial Training Through The Lens of Bi-Level Optimization. arXiv preprint arXiv:2112.12376.
+[comment]: <> (> Zhang, Y., Zhang, G., Khanduri, P., Hong, M., Chang, S., & Liu, S. &#40;2021&#41;. Revisiting and Advancing Fast Adversarial Training Through The Lens of Bi-Level Optimization. arXiv preprint arXiv:2112.12376.)
 
 [comment]: <> (This repository includes:)
 
@@ -124,4 +124,18 @@ When applying __transfer attack__, there are a few more parameters you should pa
 --surrogate_model_path  see above
 --surrogate_model_type  see above
 --surrogate_model_depth see above
+```
+
+
+## Reference
+
+If this code base helps you, please consider citing our paper:
+
+```
+@article{zhang2021revisiting,
+  title={Revisiting and Advancing Fast Adversarial Training Through The Lens of Bi-Level Optimization},
+  author={Zhang, Yihua and Zhang, Guanhuan and Khanduri, Prashant and Hong, Mingyi and Chang, Shiyu and Liu, Sijia},
+  journal={arXiv preprint arXiv:2112.12376},
+  year={2021}
+}
 ```
