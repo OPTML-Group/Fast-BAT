@@ -49,12 +49,12 @@ if __name__ == "__main__":
     ########################## learning scheduler ##########################
     parser.add_argument('--lr_scheduler', default='cyclic',
                         choices=['cyclic', 'multistep'])
-    parser.add_argument("--cyclic_milestone", default=10, type=int)
     parser.add_argument("--key_epochs", nargs="+", type=int, default=[100, 150],
                         help="Epochs where learning rate decays, this is for multi-step scheduler only.")
     parser.add_argument("--lr_decay_rate", default=0.1, type=float, help="This is for multi-step scheduler only.")
-    parser.add_argument('--lr_min', default=0., type=float)
-    parser.add_argument('--lr_max', default=0.2, type=float)
+    parser.add_argument("--cyclic_milestone", default=10, type=int, help="Key epoch for cyclic scheduler. This is for cyclic scheduler only.")
+    parser.add_argument('--lr_min', default=0., type=float, help="Min lr for cyclic scheduler. This is for cyclic scheduler only.")
+    parser.add_argument('--lr_max', default=0.2, type=float, help="Max lr for cyclic scheduler. This is for cyclic scheduler only.")
 
     ########################## model setting ##########################
     parser.add_argument('--train_loss', default="ce", choices=["ce", "sce", "n_dlr"],
@@ -105,6 +105,13 @@ if __name__ == "__main__":
     if not os.path.exists(csv_dir):
         os.mkdir(csv_dir)
 
+    setup_seed(seed=args.random_seed)
+    training_type = args.mode.upper()
+    model_name = f"{args.dataset}_{training_type}_{args.model_type}-{args.depth}_Eps{args.attackeps}_{args.time_stamp}"
+    model_path = os.path.join(result_path, args.model_prefix + model_name + '.pth')
+    best_model_path = os.path.join(result_path, args.model_prefix + model_name + '_best.pth')
+    csv_path = os.path.join(result_path, args.csv_prefix + model_name + '.csv')
+
     if args.mode == "fast_at" or args.mode == "fast_at_ga":
         args.attack_lr = args.attack_eps * 1.25 / 255
     elif args.mode == "pgd":
@@ -122,13 +129,6 @@ if __name__ == "__main__":
         args.attack_lr = args.attack_lr / 255
 
     args.attack_eps = args.attack_eps / 255
-
-    setup_seed(seed=args.random_seed)
-    training_type = args.mode.upper()
-    model_name = f"{args.dataset}_{training_type}_{args.time_stamp}"
-    model_path = os.path.join(result_path, args.model_prefix + model_name + '.pth')
-    best_model_path = os.path.join(result_path, args.model_prefix + model_name + '_best.pth')
-    csv_path = os.path.join(result_path, args.csv_prefix + model_name + '.csv')
 
     ############################## Logger #################################
     log = Log(log_each=2)
