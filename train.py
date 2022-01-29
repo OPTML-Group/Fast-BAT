@@ -27,7 +27,6 @@ if __name__ == "__main__":
                         choices=["fast_at", "fast_bat", "fast_at_ga", "pgd"],
                         help="fast-at : pgd-at, fast_bat_kkt: bi-level at with kkt, fast_at_ga: gradient alignment")
     parser.add_argument('--data_dir', default='./data/', type=str, help="The folder where you store your dataset")
-
     parser.add_argument('--model_prefix', default='checkpoints/',
                         help='File folders where you want to store your checkpoints (default: results/checkpoints/)')
     parser.add_argument('--csv_prefix', default='accuracy/',
@@ -109,12 +108,17 @@ if __name__ == "__main__":
     if args.mode == "fast_at" or args.mode == "fast_at_ga":
         args.attack_lr = args.attack_eps * 1.25 / 255
     elif args.mode == "pgd":
-        args.attack_lr = args.attack_eps * 0.5 / 255
+        if args.attack_step == 2:
+            args.attack_lr = args.attack_eps * 0.5 / 255
+        elif args.attack_step == 10:
+            args.attack_lr = 2.0 / 255
+        else:
+            args.attack_lr = args.attack_lr / 255
     else:
         if args.attack_eps <= 8:
             args.attack_lr = 5000
         else:
-            args.attack_lr = 3000
+            args.attack_lr = 2000
         args.attack_lr = args.attack_lr / 255
 
     args.attack_eps = args.attack_eps / 255

@@ -45,10 +45,26 @@ $ python train.py --mode fast_at_ga --dataset <DatasetName> --attack_eps <Attack
 |-----------	|-------	|-------	|-------	|-------	|-------	|-------	|-------	|-------	|
 | __Ga_Coef__   | 0.036 	| 0.063 	| 0.112 	| 0.200 	| 0.356 	| 0.632 	| 1.124 	| 2.000 	|
 
+* For training with PGD-2, run command:
+```
+$ python train.py --mode pgd --dataset <DatasetName> --attack_eps <AttackEps>
+```
+
+* For training with PGD-10, run command:
+```
+$ python train.py --mode pgd --dataset <DatasetName> --attack_eps <AttackEps> --attack_step 10 --epochs 200 --lr_scheduler multistep --lr_max 0.1
+```
+
+* For training standard model (PGD-0), run command:
+```
+$ python train.py --mode pgd --dataset <DatasetName> --attack_step 0 --epochs 200 --lr_scheduler multistep --lr_max 0.1
+```
+
+
 * Other possible options:
 ```
---time_stamp    the flag for each training trial, you can use the current time or whatever you want to specify each training trail. This parameter will be used to the name of your checkpoints as well as the training report. 
---data_dir,     the path you (want to) store your dataset and be sure to set to the right folder before training on TinyImageNet.
+--time_stamp    the flag for each training trial, you can use the current time or whatever you want to specify each training trail. This parameter will be applied to the name of your checkpoints as well as the training report. 
+--data_dir,     the path you (want to) store your dataset and be sure to set it to the right folder before training on TinyImageNet (see commands in 'script' folder).
 --model_prefix, the path to store your model checkpoints.
 --csv_prefix,   the path to store your training result report.
 --random_seed,  random seed for pytorch.
@@ -58,27 +74,27 @@ $ python train.py --mode fast_at_ga --dataset <DatasetName> --attack_eps <Attack
 ```
 
 Your model checkpoints will be saved to folder `./results/<model_prefix>/`, and your training report will be stored at `./results/<csv_prefix>`. By default, they will 
-be saved to `./results/checkpoints/` and `./results/accuracy/`. The checkpoint of model in the last epoch and the checkpoint of the best robust accuracy will be stored, corresponding to the without/with early stopping setting. 
+be saved to `./results/checkpoints/` and `./results/accuracy/`. The checkpoint of model in the _last_ epoch and the checkpoint of the _best_ robust accuracy will be stored, corresponding to the without/with early stopping setting. 
 
 ## Evaluation
-The evaluation file provides two classes of attacks: adaptive attack and transfer attack. For adaptive attack, the perturbation generated from
+The evaluation provides two classes of attacks: adaptive attack and transfer attack. For adaptive attack, the perturbation generated from
 the victim model are tested on itself. For transfer attack, the attack examples are generated based on the surrogate model and tested on 
 victim models instead. 
-The important parameters for evaluate models (using `evaluation.py`) are listed below:
+The important parameters for evaluating models (using `evaluation.py`) are listed below:
 ```
 --dataset           [CIFAR10, CIFAR100, SVHN, TINY_IMAGENET] 
 --model_path        the path of the checkpoint saved during training.
---model_type        [PreActResNet, ResNet, WideResNet], default as PreActResNet
---depth             [ResNet(18, 34, 50), PreActResNet(18, 34, 50), WideResNet(16, 28, 34, 70)], default as 18
---attack_method     [PGD, AutoAttack], default as PGD
---attack_step       the steps for PGD attack, default as 50
---attack_rs         the restart number for PGD attack, default as 10.
+--model_type        [PreActResNet, ResNet, WideResNet], default to PreActResNet
+--depth             [ResNet(18, 34, 50), PreActResNet(18, 34, 50), WideResNet(16, 28, 34, 70)], default to 18
+--attack_method     [PGD, AutoAttack], default to PGD
+--attack_step       the steps for PGD attack, default to 50
+--attack_rs         the restart number for PGD attack, default to 10.
 --eps               the attack budgets for evaluation, split by space, e.g. "8 12 16" 
 ```
 
-When applying transfer attack, there are a few more parameters you should pay attention to:
+When applying __transfer attack__, there are a few more parameters you should pay attention to:
 ```
---transfer              this parameter identifies the mode of transfer attack and the following parameters are activated. The following three parameters for surrogate models are just like that for victim models.
+--transfer              this parameter identifies the mode of transfer attack and the following parameters are activated. The following three parameters for surrogate models are just like that for victim models above.
 --surrogate_model_path  see above
 --surrogate_model_type  see above
 --surrogate_model_depth see above
