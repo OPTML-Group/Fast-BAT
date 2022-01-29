@@ -1,18 +1,23 @@
 # Fast-BAT
 
 
-This is an official implementation of paper "Revisiting and Advancing Fast Adversarial Training through the Lens of Bi-level Optimization".
-Fast-BAT is a new state-of-the-art method for accelerated adversarial training.
+This is an official implementation of the paper "Revisiting and Advancing Fast Adversarial Training through the Lens of Bi-level Optimization". Fast-BAT is a new state-of-the-art method for accelerated adversarial training.
 
-We hope this repository could serve as the second major contribution to the community besides our proposed Fast-BAT. 
-This repository contains various methods for adversarial training as well as adversarial attacks for robustness evaluation.
-In addition to neat implementations, this code base is designed to offer as much as flexibility to users, including but not limited to abundant
-datasets, model types, activation functions, loss functions, training schedulers, optimizers for model parameters, (adversarial & standard) training recipes, detailed adversarial training settings, and attack methods.
-
+This repository serves as the second major contribution to the community besides our proposed Fast-BAT. 
+This repository contains various methods for adversarial training as well as attacks for robustness evaluation. 
+In addition to neat implementations, this codebase is designed to offer as much flexibility to users as possible, 
+including but not limited to abundant datasets, 
+model types, 
+activation functions, 
+loss functions, 
+training schedulers, 
+optimizers for model parameters, 
+(adversarial & standard) training recipes, 
+detailed adversarial training settings, and attack methods.
 
 This repository is friendly to researchers and students of all levels. For beginners to adversarial ML, 
 the code is easy to understand; for advanced researchers, this code framework is highly-extendable for 
-robust training-related research. We hope this code base sweeps the obstacles on implementation and ease your research and study. 
+robustness-related research. We hope this codebase sweeps the obstacles on implementation for you and eases your research and study. 
 
 
 If this code base helps you, please cite our paper:
