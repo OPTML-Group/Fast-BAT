@@ -107,7 +107,7 @@ if __name__ == "__main__":
 
     setup_seed(seed=args.random_seed)
     training_type = args.mode.upper()
-    model_name = f"{args.dataset}_{training_type}_{args.model_type}-{args.depth}_Eps{args.attackeps}_{args.time_stamp}"
+    model_name = f"{args.dataset}_{training_type}_{args.model_type}-{args.depth}_Eps{args.attack_eps}_{args.time_stamp}"
     model_path = os.path.join(result_path, args.model_prefix + model_name + '.pth')
     best_model_path = os.path.join(result_path, args.model_prefix + model_name + '_best.pth')
     csv_path = os.path.join(result_path, args.csv_prefix + model_name + '.csv')
