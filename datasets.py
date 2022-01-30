@@ -390,9 +390,8 @@ def gtsrb_dataloader(batch_size=128, data_dir='./data/', val_ratio=0.1):
 
     train_size = int(number_train_images * (1 - val_ratio))
     val_size = number_train_images - train_size
-    full_train_set = GTSRB(data_dir, train=True, transform=train_transform)
-    train_set = Subset(full_train_set, list(range(train_size)))
-    val_set = Subset(full_train_set,
+    train_set = Subset(GTSRB(data_dir, train=True, transform=train_transform), list(range(train_size)))
+    val_set = Subset(GTSRB(data_dir, train=True, transform=test_transform),
                      list(range(train_size, train_size + val_size)))
     test_set = GTSRB(data_dir, train=False, transform=test_transform)
 

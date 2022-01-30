@@ -22,7 +22,7 @@ if __name__ == "__main__":
                         help="The time stamp that helps identify different trails.")
     parser.add_argument('--dataset', default="CIFAR10",
                         choices=["CIFAR10", "CIFAR100", "TINY_IMAGENET", "IMAGENET", "SVHN", "GTSRB"])
-    parser.add_argument('--dataset_val_ratio', default=0.0, type=float)
+    parser.add_argument('--dataset_val_ratio', default=0.1, type=float)
     parser.add_argument('--mode', default='fast_bat', type=str,
                         choices=["fast_at", "fast_bat", "fast_at_ga", "pgd"],
                         help="fast-at : pgd-at, fast_bat_kkt: bi-level at with kkt, fast_at_ga: gradient alignment")
@@ -317,10 +317,10 @@ if __name__ == "__main__":
                               device=device)
 
         model.eval()
-        log.eval(len_dataset=len(test_dl))
+        log.eval(len_dataset=len(val_dl))
 
         correct_total, robust_total, total, test_loss = trainer.eval(model=model,
-                                                                     test_dl=test_dl,
+                                                                     test_dl=val_dl,
                                                                      attack_eps=args.attack_eps,
                                                                      attack_steps=args.attack_step_test,
                                                                      attack_lr=args.attack_eps / 4,
