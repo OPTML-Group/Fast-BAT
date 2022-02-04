@@ -18,7 +18,7 @@ if __name__ == "__main__":
 
     ########################## basic setting ##########################
     parser.add_argument('--device', default="cuda:0", help="The name of the device you want to use (default: cuda:0)")
-    parser.add_argument('--time_stamp', default="debug",
+    parser.add_argument('--time_stamp', default="",
                         help="The time stamp that helps identify different trails.")
     parser.add_argument('--dataset', default="CIFAR10",
                         choices=["CIFAR10", "CIFAR100", "TINY_IMAGENET", "IMAGENET", "SVHN", "GTSRB"])

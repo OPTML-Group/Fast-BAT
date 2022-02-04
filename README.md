@@ -40,6 +40,7 @@ robustness-related research. We hope this codebase sweeps the obstacles on imple
 ```
 $ python -m pip install -r requirements.py
 ```
+* For dataset ImageNet, please follow the step-by-step instructions in `ImageNet-Download.md` for data downloading and preprocessing.
 * For dataset Tiny-ImageNet, please download and preprocess the dataset with the given command in __sh__ folder:
 ```
 $ bash download_tiny_imagenet.sh
@@ -61,15 +62,6 @@ $ python train.py --mode fast_at --dataset <DatasetName> --attack_eps <AttackEps
 ```
 $ python train.py --mode fast_at_ga --dataset <DatasetName> --attack_eps <AttackEps> --ga_coef <GA_Coefficient>
 ```
-* The parameter choices are as following:
-    * `<DatasetName>` : `CIFAR10` | `CIFAR100` | `SVHN` | `TINY_IMAGENET` | `GTSRB`
-    * `<AttackEps>` : `2~16`
-
-    * For Fast-AT-GA, there is a special parameter `GA_Coefficient`, it can be chosen according to the following table, which is copied from its [official repo](https://github.com/tml-epfl/understanding-fast-adv-training/blob/master/sh/exps_diff_eps_cifar10.sh#L40):
-
-| AttackEps 	| 2     	| 4     	| 6     	| 8     	| 10    	| 12    	| 14    	| 16    	|
-|-----------	|-------	|-------	|-------	|-------	|-------	|-------	|-------	|-------	|
-| __Ga_Coef__   | 0.036 	| 0.063 	| 0.112 	| 0.200 	| 0.356 	| 0.632 	| 1.124 	| 2.000 	|
 
 * For training with PGD-2, run command:
 ```
@@ -85,6 +77,17 @@ $ python train.py --mode pgd --dataset <DatasetName> --attack_eps <AttackEps> --
 ```
 $ python train.py --mode pgd --dataset <DatasetName> --attack_step 0 --epochs 200 --lr_scheduler multistep --lr_max 0.1
 ```
+### Parameter choices
+* The parameter choices are as following:
+    * `<DatasetName>` : `CIFAR10` | `CIFAR100` | `SVHN` | `GTSRB` | `TINY_IMAGENET` | `IMAGENET`
+    * `<AttackEps>` : `2~16`(Recommended)
+
+    * For Fast-AT-GA, there is a special parameter `GA_Coefficient`, it can be chosen according to the following table, which is copied from its [official repo](https://github.com/tml-epfl/understanding-fast-adv-training/blob/master/sh/exps_diff_eps_cifar10.sh#L40):
+
+| AttackEps 	| 2     	| 4     	| 6     	| 8     	| 10    	| 12    	| 14    	| 16    	|
+|-----------	|-------	|-------	|-------	|-------	|-------	|-------	|-------	|-------	|
+| __Ga_Coef__   | 0.036 	| 0.063 	| 0.112 	| 0.200 	| 0.356 	| 0.632 	| 1.124 	| 2.000 	|
+
 
 
 * Other possible options:
