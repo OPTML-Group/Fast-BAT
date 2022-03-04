@@ -1,7 +1,7 @@
 # Fast-BAT
 
 
-This is an official implementation of the paper "Revisiting and Advancing Fast Adversarial Training through the Lens of Bi-level Optimization". Fast-BAT is a new state-of-the-art method for accelerated adversarial training.
+This is an official implementation of the paper [Revisiting and Advancing Fast Adversarial Training through the Lens of Bi-level Optimization](https://arxiv.org/abs/2112.12376). Fast-BAT is a new state-of-the-art method for accelerated adversarial training.
 
 ## What's in this repository?
 
