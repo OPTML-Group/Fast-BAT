@@ -44,7 +44,7 @@ $ python -m pip install -r requirements.py
 * For dataset Tiny-ImageNet, please download and preprocess the dataset with the given command in __sh__ folder:
 ```
 $ bash download_tiny_imagenet.sh
-$ bash process_iamge_net.sh
+$ bash process_image_net.sh
 ```
 
 ## Training
