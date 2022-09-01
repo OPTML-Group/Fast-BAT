@@ -135,10 +135,12 @@ When applying __transfer attack__, there are a few more parameters you should pa
 If this code base helps you, please consider citing our paper:
 
 ```
-@article{zhang2021revisiting,
-  title={Revisiting and Advancing Fast Adversarial Training Through The Lens of Bi-Level Optimization},
-  author={Zhang, Yihua and Zhang, Guanhuan and Khanduri, Prashant and Hong, Mingyi and Chang, Shiyu and Liu, Sijia},
-  journal={arXiv preprint arXiv:2112.12376},
-  year={2021}
+@inproceedings{zhang2022revisiting,
+  title={Revisiting and advancing fast adversarial training through the lens of bi-level optimization},
+  author={Zhang, Yihua and Zhang, Guanhua and Khanduri, Prashant and Hong, Mingyi and Chang, Shiyu and Liu, Sijia},
+  booktitle={International Conference on Machine Learning},
+  pages={26693--26712},
+  year={2022},
+  organization={PMLR}
 }
 ```
