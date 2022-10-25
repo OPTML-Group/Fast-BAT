@@ -245,7 +245,7 @@ class WideResNet(BasicModule):
                 m.bias.data.zero_()
 
     def forward(self, x, penu=False):
-        x = self.normalize(x) if not self.normalize else x
+        x = self.normalize(x) if self.normalize is not None else x
         out = self.f(x)
         if penu:
             return out
@@ -332,7 +332,7 @@ class ResNet(BasicModule):
         return nn.Sequential(*layers)
 
     def forward(self, x, penu=False):
-        if not self.normalize:
+        if self.normalize is not None:
             x = self.normalize(x)
         out = self.activation_fn(self.bn1(self.conv1(x)))
         out = self.layer1(out)
@@ -428,7 +428,7 @@ class PreActResNet(BasicModule):
         return nn.Sequential(*layers)
 
     def forward(self, x, penu=False):
-        x = self.normalize(x) if not self.normalize else x
+        x = self.normalize(x) if self.normalize is not None else x
         out = self.conv1(x)
         out = self.layer1(out)
         out = self.layer2(out)
